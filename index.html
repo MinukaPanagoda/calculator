@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeoCalc • Modern Glassmorphic Calculator</title>
+    <meta name="description" content="A modern, high-precision glassmorphism calculator web app with dynamic animations, audio feedback, and calculation history.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-decorations">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <main class="app-container">
+        <!-- Calculator Card -->
+        <section class="calculator-card" id="calculator" aria-label="NeoCalc Calculator">
+            <!-- Header Bar -->
+            <header class="calc-header">
+                <div class="brand">
+                    <span class="brand-badge">PRO</span>
+                    <span class="brand-title">NeoCalc</span>
+                </div>
+                <div class="header-actions">
+                    <button type="button" class="icon-btn" id="soundToggleBtn" title="Toggle Sound Feedback" aria-label="Toggle Sound">
+                        <svg class="icon sound-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                        </svg>
+                        <svg class="icon sound-off-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <line x1="23" y1="9" x2="17" y2="15"></line>
+                            <line x1="17" y1="9" x2="23" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button type="button" class="icon-btn" id="historyToggleBtn" title="Calculation History" aria-label="Toggle History">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle Theme">
+                        <svg class="icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="icon moon-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Screen / Display Section -->
+            <div class="display-section" id="displayArea" title="Click to copy result">
+                <div class="expression-line" id="expressionDisplay" aria-live="polite"></div>
+                <div class="current-value-container">
+                    <span class="operator-indicator" id="operatorIndicator"></span>
+                    <div class="current-value" id="currentValueDisplay" aria-live="assertive">0</div>
+                </div>
+                <div class="copy-hint" id="copyHint">Copied!</div>
+            </div>
+
+            <!-- Keypad Section -->
+            <div class="keypad" id="keypad">
+                <!-- Row 1 -->
+                <button type="button" class="btn btn-fn" data-action="clear" id="btn-clear" aria-label="Clear All">AC</button>
+                <button type="button" class="btn btn-fn" data-action="backspace" id="btn-backspace" aria-label="Delete">
+                    <svg viewBox="0 0 24 24" class="key-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                        <line x1="18" y1="9" x2="12" y2="15"></line>
+                        <line x1="12" y1="9" x2="18" y2="15"></line>
+                    </svg>
+                </button>
+                <button type="button" class="btn btn-fn" data-action="percent" id="btn-percent" aria-label="Percentage">%</button>
+                <button type="button" class="btn btn-op" data-operator="÷" id="btn-divide" aria-label="Divide">÷</button>
+
+                <!-- Row 2 -->
+                <button type="button" class="btn btn-fn" data-action="parentheses" id="btn-parens" aria-label="Parentheses">( )</button>
+                <button type="button" class="btn btn-fn" data-action="sqrt" id="btn-sqrt" aria-label="Square Root">√</button>
+                <button type="button" class="btn btn-fn" data-action="power" id="btn-power" aria-label="Power">x²</button>
+                <button type="button" class="btn btn-op" data-operator="×" id="btn-multiply" aria-label="Multiply">×</button>
+
+                <!-- Row 3 -->
+                <button type="button" class="btn btn-num" data-number="7" id="btn-7">7</button>
+                <button type="button" class="btn btn-num" data-number="8" id="btn-8">8</button>
+                <button type="button" class="btn btn-num" data-number="9" id="btn-9">9</button>
+                <button type="button" class="btn btn-op" data-operator="-" id="btn-subtract" aria-label="Subtract">−</button>
+
+                <!-- Row 4 -->
+                <button type="button" class="btn btn-num" data-number="4" id="btn-4">4</button>
+                <button type="button" class="btn btn-num" data-number="5" id="btn-5">5</button>
+                <button type="button" class="btn btn-num" data-number="6" id="btn-6">6</button>
+                <button type="button" class="btn btn-op" data-operator="+" id="btn-add" aria-label="Add">+</button>
+
+                <!-- Row 5 -->
+                <button type="button" class="btn btn-num" data-number="1" id="btn-1">1</button>
+                <button type="button" class="btn btn-num" data-number="2" id="btn-2">2</button>
+                <button type="button" class="btn btn-num" data-number="3" id="btn-3">3</button>
+                <button type="button" class="btn btn-equals" data-action="equals" id="btn-equals" aria-label="Equals">=</button>
+
+                <!-- Row 6 -->
+                <button type="button" class="btn btn-num" data-action="negate" id="btn-negate" aria-label="Toggle Sign">±</button>
+                <button type="button" class="btn btn-num" data-number="0" id="btn-0">0</button>
+                <button type="button" class="btn btn-num" data-action="decimal" id="btn-decimal">.</button>
+            </div>
+
+            <!-- Footer -->
+            <footer class="calc-footer">
+                <span>Keyboard enabled • <kbd>Enter</kbd> to calculate • <kbd>Esc</kbd> to clear</span>
+            </footer>
+        </section>
+
+        <!-- Slide-out History Drawer -->
+        <aside class="history-drawer" id="historyDrawer" aria-label="Past Calculations" aria-hidden="true">
+            <div class="history-header">
+                <div class="history-title">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Calculation History</span>
+                </div>
+                <div class="history-header-actions">
+                    <button type="button" class="text-btn" id="clearHistoryBtn" title="Clear All History">Clear</button>
+                    <button type="button" class="icon-btn-sm" id="closeHistoryBtn" aria-label="Close History">✕</button>
+                </div>
+            </div>
+
+            <div class="history-list" id="historyList">
+                <div class="empty-history">
+                    <p>No calculations yet</p>
+                    <small>Your past math results will appear here automatically.</small>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
