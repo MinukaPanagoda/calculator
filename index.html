@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeoCalc • Modern Glassmorphic Calculator</title>
-    <meta name="description" content="A modern, high-precision glassmorphism calculator web app with dynamic animations, audio feedback, and calculation history.">
+    <title>NeoCalc • Precision Calculator & Unit Converter</title>
+    <meta name="description" content="A modern, expandable glassmorphic calculator and multi-category unit converter with dynamic animations, audio feedback, and calculation history.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,8 +18,8 @@
         <div class="glow-orb orb-3"></div>
     </div>
 
-    <main class="app-container">
-        <!-- Calculator Card -->
+    <main class="app-container" id="appContainer">
+        <!-- Main Calculator Card -->
         <section class="calculator-card" id="calculator" aria-label="NeoCalc Calculator">
             <!-- Header Bar -->
             <header class="calc-header">
@@ -27,6 +27,41 @@
                     <span class="brand-badge">PRO</span>
                     <span class="brand-title">NeoCalc</span>
                 </div>
+
+                <!-- Mode Switcher Tabs -->
+                <nav class="mode-tabs" aria-label="Calculator Modes">
+                    <button type="button" class="tab-btn active" data-mode="calc" id="modeCalcBtn">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="16" y1="14" x2="16" y2="18"></line>
+                            <path d="M16 10h.01"></path>
+                            <path d="M12 10h.01"></path>
+                            <path d="M8 10h.01"></path>
+                            <path d="M12 14h.01"></path>
+                            <path d="M8 14h.01"></path>
+                            <path d="M12 18h.01"></path>
+                            <path d="M8 18h.01"></path>
+                        </svg>
+                        <span>Calc</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-mode="converter" id="modeConverterBtn">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <span>Convert</span>
+                    </button>
+                    <button type="button" class="tab-btn" data-mode="split" id="modeSplitBtn" title="Dual Split View">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <line x1="12" y1="3" x2="12" y2="21"></line>
+                        </svg>
+                        <span>Dual</span>
+                    </button>
+                </nav>
+
                 <div class="header-actions">
                     <button type="button" class="icon-btn" id="soundToggleBtn" title="Toggle Sound Feedback" aria-label="Toggle Sound">
                         <svg class="icon sound-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -65,64 +100,141 @@
                 </div>
             </header>
 
-            <!-- Screen / Display Section -->
-            <div class="display-section" id="displayArea" title="Click to copy result">
-                <div class="expression-line" id="expressionDisplay" aria-live="polite"></div>
-                <div class="current-value-container">
-                    <span class="operator-indicator" id="operatorIndicator"></span>
-                    <div class="current-value" id="currentValueDisplay" aria-live="assertive">0</div>
+            <!-- Dual Panel Body -->
+            <div class="panels-wrapper">
+                <!-- PANEL 1: Standard Calculator -->
+                <div class="calculator-panel" id="calculatorPanel">
+                    <!-- Screen / Display Section -->
+                    <div class="display-section" id="displayArea" title="Click to copy result">
+                        <div class="expression-line" id="expressionDisplay" aria-live="polite"></div>
+                        <div class="current-value-container">
+                            <span class="operator-indicator" id="operatorIndicator"></span>
+                            <div class="current-value" id="currentValueDisplay" aria-live="assertive">0</div>
+                        </div>
+                        <div class="copy-hint" id="copyHint">Copied!</div>
+                    </div>
+
+                    <!-- Keypad Section -->
+                    <div class="keypad" id="keypad">
+                        <!-- Row 1 -->
+                        <button type="button" class="btn btn-fn" data-action="clear" id="btn-clear" aria-label="Clear All">AC</button>
+                        <button type="button" class="btn btn-fn" data-action="backspace" id="btn-backspace" aria-label="Delete">
+                            <svg viewBox="0 0 24 24" class="key-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                                <line x1="18" y1="9" x2="12" y2="15"></line>
+                                <line x1="12" y1="9" x2="18" y2="15"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn-fn" data-action="percent" id="btn-percent" aria-label="Percentage">%</button>
+                        <button type="button" class="btn btn-op" data-operator="÷" id="btn-divide" aria-label="Divide">÷</button>
+
+                        <!-- Row 2 -->
+                        <button type="button" class="btn btn-fn" data-action="parentheses" id="btn-parens" aria-label="Parentheses">( )</button>
+                        <button type="button" class="btn btn-fn" data-action="sqrt" id="btn-sqrt" aria-label="Square Root">√</button>
+                        <button type="button" class="btn btn-fn" data-action="power" id="btn-power" aria-label="Power">x²</button>
+                        <button type="button" class="btn btn-op" data-operator="×" id="btn-multiply" aria-label="Multiply">×</button>
+
+                        <!-- Row 3 -->
+                        <button type="button" class="btn btn-num" data-number="7" id="btn-7">7</button>
+                        <button type="button" class="btn btn-num" data-number="8" id="btn-8">8</button>
+                        <button type="button" class="btn btn-num" data-number="9" id="btn-9">9</button>
+                        <button type="button" class="btn btn-op" data-operator="-" id="btn-subtract" aria-label="Subtract">−</button>
+
+                        <!-- Row 4 -->
+                        <button type="button" class="btn btn-num" data-number="4" id="btn-4">4</button>
+                        <button type="button" class="btn btn-num" data-number="5" id="btn-5">5</button>
+                        <button type="button" class="btn btn-num" data-number="6" id="btn-6">6</button>
+                        <button type="button" class="btn btn-op" data-operator="+" id="btn-add" aria-label="Add">+</button>
+
+                        <!-- Row 5 -->
+                        <button type="button" class="btn btn-num" data-number="1" id="btn-1">1</button>
+                        <button type="button" class="btn btn-num" data-number="2" id="btn-2">2</button>
+                        <button type="button" class="btn btn-num" data-number="3" id="btn-3">3</button>
+                        <button type="button" class="btn btn-equals" data-action="equals" id="btn-equals" aria-label="Equals">=</button>
+
+                        <!-- Row 6 -->
+                        <button type="button" class="btn btn-num" data-action="negate" id="btn-negate" aria-label="Toggle Sign">±</button>
+                        <button type="button" class="btn btn-num" data-number="0" id="btn-0">0</button>
+                        <button type="button" class="btn btn-num" data-action="decimal" id="btn-decimal">.</button>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="calc-footer">
+                        <span>Keyboard enabled • <kbd>Enter</kbd> to calculate • <kbd>Esc</kbd> to clear</span>
+                    </footer>
                 </div>
-                <div class="copy-hint" id="copyHint">Copied!</div>
+
+                <!-- PANEL 2: Expandable Smart Converter -->
+                <div class="converter-panel" id="converterPanel">
+                    <div class="converter-header">
+                        <div class="converter-title-group">
+                            <svg class="icon icon-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                            <h2 class="converter-heading">Smart Converter</h2>
+                        </div>
+                        <button type="button" class="quick-calc-btn" id="sendToCalcBtn" title="Send result to calculator display">
+                            <span>Use in Calc</span>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div class="category-pills" id="categoryPills">
+                        <button type="button" class="pill active" data-category="length">📏 Length</button>
+                        <button type="button" class="pill" data-category="weight">⚖️ Mass</button>
+                        <button type="button" class="pill" data-category="temperature">🌡️ Temp</button>
+                        <button type="button" class="pill" data-category="data">💾 Data</button>
+                        <button type="button" class="pill" data-category="speed">⚡ Speed</button>
+                        <button type="button" class="pill" data-category="time">⏳ Time</button>
+                    </div>
+
+                    <!-- Conversion Inputs Box -->
+                    <div class="conversion-box">
+                        <!-- Source Unit -->
+                        <div class="unit-group">
+                            <label for="fromUnitSelect" class="unit-label">FROM</label>
+                            <div class="input-unit-wrapper">
+                                <input type="number" id="fromValueInput" class="unit-input" value="1" step="any" placeholder="0">
+                                <select id="fromUnitSelect" class="unit-select" aria-label="From Unit"></select>
+                            </div>
+                        </div>
+
+                        <!-- Swap Button -->
+                        <div class="swap-btn-wrapper">
+                            <button type="button" class="swap-btn" id="swapUnitsBtn" title="Swap Units" aria-label="Swap Units">
+                                <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <polyline points="17 14 12 9 7 14"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Target Unit -->
+                        <div class="unit-group">
+                            <label for="toUnitSelect" class="unit-label">TO</label>
+                            <div class="input-unit-wrapper">
+                                <input type="number" id="toValueInput" class="unit-input" value="100" step="any" placeholder="0">
+                                <select id="toUnitSelect" class="unit-select" aria-label="To Unit"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formula / Realtime Insight Card -->
+                    <div class="conversion-insight" id="conversionInsight">
+                        <span class="insight-label">Formula</span>
+                        <div class="insight-text" id="insightFormula">1 Meter = 100 Centimeters</div>
+                    </div>
+
+                    <!-- Quick Preset Equivalencies -->
+                    <div class="quick-presets">
+                        <div class="presets-title">Quick Values</div>
+                        <div class="presets-grid" id="presetsGrid"></div>
+                    </div>
+                </div>
             </div>
-
-            <!-- Keypad Section -->
-            <div class="keypad" id="keypad">
-                <!-- Row 1 -->
-                <button type="button" class="btn btn-fn" data-action="clear" id="btn-clear" aria-label="Clear All">AC</button>
-                <button type="button" class="btn btn-fn" data-action="backspace" id="btn-backspace" aria-label="Delete">
-                    <svg viewBox="0 0 24 24" class="key-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
-                        <line x1="18" y1="9" x2="12" y2="15"></line>
-                        <line x1="12" y1="9" x2="18" y2="15"></line>
-                    </svg>
-                </button>
-                <button type="button" class="btn btn-fn" data-action="percent" id="btn-percent" aria-label="Percentage">%</button>
-                <button type="button" class="btn btn-op" data-operator="÷" id="btn-divide" aria-label="Divide">÷</button>
-
-                <!-- Row 2 -->
-                <button type="button" class="btn btn-fn" data-action="parentheses" id="btn-parens" aria-label="Parentheses">( )</button>
-                <button type="button" class="btn btn-fn" data-action="sqrt" id="btn-sqrt" aria-label="Square Root">√</button>
-                <button type="button" class="btn btn-fn" data-action="power" id="btn-power" aria-label="Power">x²</button>
-                <button type="button" class="btn btn-op" data-operator="×" id="btn-multiply" aria-label="Multiply">×</button>
-
-                <!-- Row 3 -->
-                <button type="button" class="btn btn-num" data-number="7" id="btn-7">7</button>
-                <button type="button" class="btn btn-num" data-number="8" id="btn-8">8</button>
-                <button type="button" class="btn btn-num" data-number="9" id="btn-9">9</button>
-                <button type="button" class="btn btn-op" data-operator="-" id="btn-subtract" aria-label="Subtract">−</button>
-
-                <!-- Row 4 -->
-                <button type="button" class="btn btn-num" data-number="4" id="btn-4">4</button>
-                <button type="button" class="btn btn-num" data-number="5" id="btn-5">5</button>
-                <button type="button" class="btn btn-num" data-number="6" id="btn-6">6</button>
-                <button type="button" class="btn btn-op" data-operator="+" id="btn-add" aria-label="Add">+</button>
-
-                <!-- Row 5 -->
-                <button type="button" class="btn btn-num" data-number="1" id="btn-1">1</button>
-                <button type="button" class="btn btn-num" data-number="2" id="btn-2">2</button>
-                <button type="button" class="btn btn-num" data-number="3" id="btn-3">3</button>
-                <button type="button" class="btn btn-equals" data-action="equals" id="btn-equals" aria-label="Equals">=</button>
-
-                <!-- Row 6 -->
-                <button type="button" class="btn btn-num" data-action="negate" id="btn-negate" aria-label="Toggle Sign">±</button>
-                <button type="button" class="btn btn-num" data-number="0" id="btn-0">0</button>
-                <button type="button" class="btn btn-num" data-action="decimal" id="btn-decimal">.</button>
-            </div>
-
-            <!-- Footer -->
-            <footer class="calc-footer">
-                <span>Keyboard enabled • <kbd>Enter</kbd> to calculate • <kbd>Esc</kbd> to clear</span>
-            </footer>
         </section>
 
         <!-- Slide-out History Drawer -->

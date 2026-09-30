@@ -1,11 +1,365 @@
-﻿/**
- * NeoCalc - Modern Glassmorphic Precision Calculator
- * Full keyboard support, calculation history, audio synthesizer, and themes.
+/**
+ * NeoCalc - Modern Glassmorphic Precision Calculator & Expandable Smart Converter
+ * Full keyboard support, calculation history, audio synthesizer, and unit converters.
  */
 
+// ========================================================
+// CONVERSION DEFINITIONS
+// ========================================================
+const CONVERSION_DATA = {
+    length: {
+        name: "Length",
+        base: "m",
+        units: {
+            m: { name: "Meters (m)", factor: 1 },
+            km: { name: "Kilometers (km)", factor: 1000 },
+            cm: { name: "Centimeters (cm)", factor: 0.01 },
+            mm: { name: "Millimeters (mm)", factor: 0.001 },
+            mi: { name: "Miles (mi)", factor: 1609.344 },
+            yd: { name: "Yards (yd)", factor: 0.9144 },
+            ft: { name: "Feet (ft)", factor: 0.3048 },
+            in: { name: "Inches (in)", factor: 0.0254 }
+        },
+        defaultFrom: "km",
+        defaultTo: "mi",
+        presets: [
+            { from: 1, fromU: "km", toU: "m" },
+            { from: 1, fromU: "mi", toU: "km" },
+            { from: 1, fromU: "m", toU: "ft" },
+            { from: 1, fromU: "ft", toU: "in" }
+        ]
+    },
+    weight: {
+        name: "Mass / Weight",
+        base: "kg",
+        units: {
+            kg: { name: "Kilograms (kg)", factor: 1 },
+            g: { name: "Grams (g)", factor: 0.001 },
+            mg: { name: "Milligrams (mg)", factor: 0.000001 },
+            t: { name: "Metric Tons (t)", factor: 1000 },
+            lb: { name: "Pounds (lbs)", factor: 0.45359237 },
+            oz: { name: "Ounces (oz)", factor: 0.02834952 }
+        },
+        defaultFrom: "kg",
+        defaultTo: "lb",
+        presets: [
+            { from: 1, fromU: "kg", toU: "lb" },
+            { from: 1, fromU: "lb", toU: "oz" },
+            { from: 1, fromU: "kg", toU: "g" },
+            { from: 1, fromU: "t", toU: "kg" }
+        ]
+    },
+    temperature: {
+        name: "Temperature",
+        special: true,
+        units: {
+            c: { name: "Celsius (°C)" },
+            f: { name: "Fahrenheit (°F)" },
+            k: { name: "Kelvin (K)" }
+        },
+        defaultFrom: "c",
+        defaultTo: "f",
+        presets: [
+            { from: 0, fromU: "c", toU: "f" },
+            { from: 100, fromU: "c", toU: "f" },
+            { from: 72, fromU: "f", toU: "c" },
+            { from: 273.15, fromU: "k", toU: "c" }
+        ]
+    },
+    data: {
+        name: "Digital Data",
+        base: "b",
+        units: {
+            b: { name: "Bytes (B)", factor: 1 },
+            kb: { name: "Kilobytes (KB)", factor: 1024 },
+            mb: { name: "Megabytes (MB)", factor: 1024 * 1024 },
+            gb: { name: "Gigabytes (GB)", factor: 1024 * 1024 * 1024 },
+            tb: { name: "Terabytes (TB)", factor: 1024 * 1024 * 1024 * 1024 }
+        },
+        defaultFrom: "gb",
+        defaultTo: "mb",
+        presets: [
+            { from: 1, fromU: "gb", toU: "mb" },
+            { from: 1, fromU: "tb", toU: "gb" },
+            { from: 1, fromU: "mb", toU: "kb" }
+        ]
+    },
+    speed: {
+        name: "Speed",
+        base: "mps",
+        units: {
+            mps: { name: "Meters/sec (m/s)", factor: 1 },
+            kmh: { name: "Kilometers/hour (km/h)", factor: 1 / 3.6 },
+            mph: { name: "Miles/hour (mph)", factor: 0.44704 },
+            knot: { name: "Knots (kn)", factor: 0.514444 }
+        },
+        defaultFrom: "kmh",
+        defaultTo: "mph",
+        presets: [
+            { from: 100, fromU: "kmh", toU: "mph" },
+            { from: 60, fromU: "mph", toU: "kmh" },
+            { from: 10, fromU: "mps", toU: "kmh" }
+        ]
+    },
+    time: {
+        name: "Time",
+        base: "s",
+        units: {
+            s: { name: "Seconds (s)", factor: 1 },
+            min: { name: "Minutes (min)", factor: 60 },
+            h: { name: "Hours (h)", factor: 3600 },
+            d: { name: "Days (d)", factor: 86400 },
+            wk: { name: "Weeks (wk)", factor: 604800 },
+            yr: { name: "Years (yr)", factor: 31536000 }
+        },
+        defaultFrom: "h",
+        defaultTo: "min",
+        presets: [
+            { from: 1, fromU: "h", toU: "min" },
+            { from: 1, fromU: "d", toU: "h" },
+            { from: 1, fromU: "yr", toU: "d" }
+        ]
+    }
+};
+
+// ========================================================
+// SMART CONVERTER ENGINE
+// ========================================================
+class SmartConverter {
+    constructor(calculatorInstance) {
+        this.calc = calculatorInstance;
+        this.currentCategory = 'length';
+        this.fromUnit = CONVERSION_DATA.length.defaultFrom;
+        this.toUnit = CONVERSION_DATA.length.defaultTo;
+
+        // Elements
+        this.categoryPills = document.getElementById('categoryPills');
+        this.fromValueInput = document.getElementById('fromValueInput');
+        this.toValueInput = document.getElementById('toValueInput');
+        this.fromUnitSelect = document.getElementById('fromUnitSelect');
+        this.toUnitSelect = document.getElementById('toUnitSelect');
+        this.swapUnitsBtn = document.getElementById('swapUnitsBtn');
+        this.insightFormula = document.getElementById('insightFormula');
+        this.presetsGrid = document.getElementById('presetsGrid');
+        this.sendToCalcBtn = document.getElementById('sendToCalcBtn');
+
+        this.init();
+    }
+
+    init() {
+        this.populateDropdowns();
+        this.renderPresets();
+        this.setupEvents();
+        this.convert('from');
+    }
+
+    setupEvents() {
+        // Category switching
+        this.categoryPills.addEventListener('click', (e) => {
+            const pill = e.target.closest('.pill');
+            if (!pill) return;
+            const cat = pill.dataset.category;
+            if (cat && cat !== this.currentCategory) {
+                this.setCategory(cat);
+                this.calc.playSound(550, 'sine', 0.03);
+            }
+        });
+
+        // Value inputs
+        this.fromValueInput.addEventListener('input', () => this.convert('from'));
+        this.toValueInput.addEventListener('input', () => this.convert('to'));
+
+        // Unit changes
+        this.fromUnitSelect.addEventListener('change', () => {
+            this.fromUnit = this.fromUnitSelect.value;
+            this.convert('from');
+            this.calc.playSound(480, 'sine', 0.02);
+        });
+
+        this.toUnitSelect.addEventListener('change', () => {
+            this.toUnit = this.toUnitSelect.value;
+            this.convert('from');
+            this.calc.playSound(480, 'sine', 0.02);
+        });
+
+        // Swap button
+        this.swapUnitsBtn.addEventListener('click', () => {
+            this.swapUnits();
+            this.calc.playSound(620, 'triangle', 0.04);
+        });
+
+        // Send to Calc button
+        this.sendToCalcBtn.addEventListener('click', () => {
+            const val = this.toValueInput.value;
+            if (val && !isNaN(val)) {
+                this.calc.currentInput = val.toString();
+                this.calc.shouldResetInput = true;
+                this.calc.updateDisplay();
+                this.calc.showToast('Imported ' + val + ' into Calculator');
+                this.calc.playSound(750, 'sine', 0.06);
+            }
+        });
+    }
+
+    setCategory(catKey) {
+        this.currentCategory = catKey;
+        const catData = CONVERSION_DATA[catKey];
+        this.fromUnit = catData.defaultFrom;
+        this.toUnit = catData.defaultTo;
+
+        // Update active pill
+        this.categoryPills.querySelectorAll('.pill').forEach(p => {
+            p.classList.toggle('active', p.dataset.category === catKey);
+        });
+
+        this.populateDropdowns();
+        this.renderPresets();
+        this.convert('from');
+    }
+
+    populateDropdowns() {
+        const catData = CONVERSION_DATA[this.currentCategory];
+        const units = catData.units;
+
+        const optionsHtml = Object.entries(units).map(([key, u]) => 
+            '<option value="' + key + '">' + u.name + '</option>'
+        ).join('');
+
+        this.fromUnitSelect.innerHTML = optionsHtml;
+        this.toUnitSelect.innerHTML = optionsHtml;
+
+        this.fromUnitSelect.value = this.fromUnit;
+        this.toUnitSelect.value = this.toUnit;
+    }
+
+    renderPresets() {
+        const catData = CONVERSION_DATA[this.currentCategory];
+        if (!catData.presets || catData.presets.length === 0) {
+            this.presetsGrid.innerHTML = '';
+            return;
+        }
+
+        this.presetsGrid.innerHTML = catData.presets.map(p => {
+            return '<button type="button" class="preset-chip" data-from="' + p.from + '" data-fromu="' + p.fromU + '" data-tou="' + p.toU + '">' +
+                p.from + ' ' + p.fromU + ' → ' + p.toU +
+            '</button>';
+        }).join('');
+
+        this.presetsGrid.querySelectorAll('.preset-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                this.fromValueInput.value = chip.dataset.from;
+                this.fromUnit = chip.dataset.fromu;
+                this.toUnit = chip.dataset.tou;
+                this.fromUnitSelect.value = this.fromUnit;
+                this.toUnitSelect.value = this.toUnit;
+                this.convert('from');
+                this.calc.playSound(500, 'sine', 0.03);
+            });
+        });
+    }
+
+    swapUnits() {
+        const tempUnit = this.fromUnit;
+        this.fromUnit = this.toUnit;
+        this.toUnit = tempUnit;
+
+        this.fromUnitSelect.value = this.fromUnit;
+        this.toUnitSelect.value = this.toUnit;
+
+        const tempVal = this.fromValueInput.value;
+        this.fromValueInput.value = this.toValueInput.value;
+        this.toValueInput.value = tempVal;
+
+        this.convert('from');
+    }
+
+    convert(direction = 'from') {
+        const catData = CONVERSION_DATA[this.currentCategory];
+        const fromU = this.fromUnit;
+        const toU = this.toUnit;
+
+        let inputVal = parseFloat(direction === 'from' ? this.fromValueInput.value : this.toValueInput.value);
+
+        if (isNaN(inputVal)) {
+            if (direction === 'from') this.toValueInput.value = '';
+            else this.fromValueInput.value = '';
+            return;
+        }
+
+        let result = 0;
+
+        if (catData.special && this.currentCategory === 'temperature') {
+            if (direction === 'from') {
+                result = this.convertTemperature(inputVal, fromU, toU);
+                this.toValueInput.value = this.formatNumber(result);
+            } else {
+                result = this.convertTemperature(inputVal, toU, fromU);
+                this.fromValueInput.value = this.formatNumber(result);
+            }
+        } else {
+            const fromFactor = catData.units[fromU].factor;
+            const toFactor = catData.units[toU].factor;
+
+            if (direction === 'from') {
+                const baseVal = inputVal * fromFactor;
+                result = baseVal / toFactor;
+                this.toValueInput.value = this.formatNumber(result);
+            } else {
+                const baseVal = inputVal * toFactor;
+                result = baseVal / fromFactor;
+                this.fromValueInput.value = this.formatNumber(result);
+            }
+        }
+
+        this.updateFormulaInsight();
+    }
+
+    convertTemperature(val, from, to) {
+        if (from === to) return val;
+        let c = val;
+        if (from === 'f') c = (val - 32) * (5 / 9);
+        else if (from === 'k') c = val - 273.15;
+
+        if (to === 'c') return c;
+        if (to === 'f') return (c * 9 / 5) + 32;
+        if (to === 'k') return c + 273.15;
+        return c;
+    }
+
+    formatNumber(num) {
+        if (!isFinite(num)) return '0';
+        return parseFloat(Number(num).toPrecision(8)).toString();
+    }
+
+    updateFormulaInsight() {
+        const catData = CONVERSION_DATA[this.currentCategory];
+        const fromName = catData.units[this.fromUnit].name;
+        const toName = catData.units[this.toUnit].name;
+
+        if (this.currentCategory === 'temperature') {
+            if (this.fromUnit === 'c' && this.toUnit === 'f') {
+                this.insightFormula.textContent = "(°C × 9/5) + 32 = °F";
+            } else if (this.fromUnit === 'f' && this.toUnit === 'c') {
+                this.insightFormula.textContent = "(°F − 32) × 5/9 = °C";
+            } else {
+                this.insightFormula.textContent = fromName + ' ⇄ ' + toName;
+            }
+        } else {
+            const singleFromBase = catData.units[this.fromUnit].factor;
+            const singleToBase = catData.units[this.toUnit].factor;
+            const ratio = this.formatNumber(singleFromBase / singleToBase);
+            this.insightFormula.textContent = '1 ' + this.fromUnit + ' = ' + ratio + ' ' + this.toUnit;
+        }
+    }
+}
+
+// ========================================================
+// MAIN CALCULATOR ENGINE
+// ========================================================
 class NeoCalculator {
     constructor() {
         // UI Elements
+        this.appContainer = document.getElementById('appContainer');
         this.currentValueEl = document.getElementById('currentValueDisplay');
         this.expressionEl = document.getElementById('expressionDisplay');
         this.operatorIndicatorEl = document.getElementById('operatorIndicator');
@@ -21,6 +375,11 @@ class NeoCalculator {
         this.keypad = document.getElementById('keypad');
         this.toast = document.getElementById('toast');
 
+        // Mode buttons
+        this.modeCalcBtn = document.getElementById('modeCalcBtn');
+        this.modeConverterBtn = document.getElementById('modeConverterBtn');
+        this.modeSplitBtn = document.getElementById('modeSplitBtn');
+
         // State variables
         this.currentInput = '0';
         this.previousInput = '';
@@ -29,6 +388,7 @@ class NeoCalculator {
         this.openParensCount = 0;
         this.soundEnabled = true;
         this.history = [];
+        this.currentMode = 'calc';
 
         // Audio Context
         this.audioCtx = null;
@@ -39,29 +399,35 @@ class NeoCalculator {
     init() {
         this.loadSettings();
         this.setupEventListeners();
+        this.setupModeSwitcher();
         this.updateDisplay();
         this.renderHistory();
+
+        // Instantiate Smart Converter
+        this.converter = new SmartConverter(this);
     }
 
     /* ----------------------------------------------------
        Theme & Sound Storage
     ---------------------------------------------------- */
     loadSettings() {
-        // Theme
         const savedTheme = localStorage.getItem('neocalc_theme');
         if (savedTheme === 'light') {
             document.body.classList.add('light-theme');
             this.updateThemeIcons(true);
         }
 
-        // Sound
         const savedSound = localStorage.getItem('neocalc_sound');
         if (savedSound !== null) {
             this.soundEnabled = savedSound === 'true';
             this.updateSoundIcons(this.soundEnabled);
         }
 
-        // History
+        const savedMode = localStorage.getItem('neocalc_mode');
+        if (savedMode && ['calc', 'converter', 'split'].includes(savedMode)) {
+            this.setMode(savedMode);
+        }
+
         const savedHistory = localStorage.getItem('neocalc_history');
         if (savedHistory) {
             try {
@@ -70,6 +436,26 @@ class NeoCalculator {
                 this.history = [];
             }
         }
+    }
+
+    setupModeSwitcher() {
+        this.modeCalcBtn.addEventListener('click', () => this.setMode('calc'));
+        this.modeConverterBtn.addEventListener('click', () => this.setMode('converter'));
+        this.modeSplitBtn.addEventListener('click', () => this.setMode('split'));
+    }
+
+    setMode(mode) {
+        this.currentMode = mode;
+        localStorage.setItem('neocalc_mode', mode);
+
+        this.appContainer.classList.remove('mode-calc', 'mode-converter', 'mode-split');
+        this.appContainer.classList.add('mode-' + mode);
+
+        this.modeCalcBtn.classList.toggle('active', mode === 'calc');
+        this.modeConverterBtn.classList.toggle('active', mode === 'converter');
+        this.modeSplitBtn.classList.toggle('active', mode === 'split');
+
+        this.playSound(600, 'sine', 0.04);
     }
 
     updateThemeIcons(isLight) {
@@ -143,7 +529,7 @@ class NeoCalculator {
             osc.start();
             osc.stop(this.audioCtx.currentTime + duration);
         } catch (e) {
-            // Audio not allowed or unavailable
+            // Audio unavailable
         }
     }
 
@@ -151,21 +537,13 @@ class NeoCalculator {
        Event Listeners
     ---------------------------------------------------- */
     setupEventListeners() {
-        // Theme toggle
         this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
-
-        // Sound toggle
         this.soundToggleBtn.addEventListener('click', () => this.toggleSound());
-
-        // History Drawer toggles
         this.historyToggleBtn.addEventListener('click', () => this.openHistory());
         this.closeHistoryBtn.addEventListener('click', () => this.closeHistory());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-
-        // Copy on display click
         this.displayArea.addEventListener('click', () => this.copyToClipboard());
 
-        // Keypad clicks
         this.keypad.addEventListener('click', (e) => {
             const btn = e.target.closest('button');
             if (!btn) return;
@@ -181,22 +559,20 @@ class NeoCalculator {
             }
         });
 
-        // Physical Keyboard Support
         window.addEventListener('keydown', (e) => this.handleKeyboard(e));
     }
 
     handleKeyboard(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
         if (e.repeat) return;
 
-        // Numbers 0-9
         if (/^[0-9]$/.test(e.key)) {
-            this.animateButton(`btn-${e.key}`);
+            this.animateButton('btn-' + e.key);
             this.handleNumber(e.key);
             this.playSound(450, 'sine', 0.03);
             return;
         }
 
-        // Operators
         if (e.key === '+') {
             this.animateButton('btn-add');
             this.handleOperator('+');
@@ -368,7 +744,7 @@ class NeoCalculator {
             this.showToast('Invalid input for square root');
             return;
         }
-        const expr = `√(${this.currentInput})`;
+        const expr = '√(' + this.currentInput + ')';
         const res = this.formatPrecision(Math.sqrt(val));
         this.saveHistory(expr, res);
         this.currentInput = res.toString();
@@ -379,7 +755,7 @@ class NeoCalculator {
     calculatePower() {
         const val = parseFloat(this.currentInput);
         if (isNaN(val)) return;
-        const expr = `sqr(${this.currentInput})`;
+        const expr = 'sqr(' + this.currentInput + ')';
         const res = this.formatPrecision(Math.pow(val, 2));
         this.saveHistory(expr, res);
         this.currentInput = res.toString();
@@ -388,7 +764,6 @@ class NeoCalculator {
     }
 
     handleParentheses() {
-        // Simple parenthesis behavior for expression grouping
         if (this.currentInput === '0' || this.shouldResetInput) {
             this.currentInput = '(';
             this.openParensCount++;
@@ -411,7 +786,7 @@ class NeoCalculator {
         if (isNaN(prev) || isNaN(curr)) return;
 
         let result = 0;
-        const expression = `${this.previousInput} ${this.activeOperator} ${this.currentInput}`;
+        const expression = this.previousInput + ' ' + this.activeOperator + ' ' + this.currentInput;
 
         switch (this.activeOperator) {
             case '+':
@@ -454,7 +829,6 @@ class NeoCalculator {
 
     formatPrecision(num) {
         if (!isFinite(num)) return 'Error';
-        // Mitigate binary floating point issues (e.g., 0.1 + 0.2 = 0.30000000000000004)
         return parseFloat(Number(num).toPrecision(12));
     }
 
@@ -465,14 +839,13 @@ class NeoCalculator {
         this.currentValueEl.textContent = this.formatNumberDisplay(this.currentInput);
 
         if (this.activeOperator && this.previousInput !== '') {
-            this.expressionEl.textContent = `${this.formatNumberDisplay(this.previousInput)} ${this.activeOperator}`;
+            this.expressionEl.textContent = this.formatNumberDisplay(this.previousInput) + ' ' + this.activeOperator;
             this.operatorIndicatorEl.textContent = this.activeOperator;
         } else {
             this.expressionEl.textContent = '';
             this.operatorIndicatorEl.textContent = '';
         }
 
-        // Adjust font size dynamically for long numbers
         const len = this.currentInput.length;
         if (len > 12) {
             this.currentValueEl.style.fontSize = '1.6rem';
@@ -530,12 +903,11 @@ class NeoCalculator {
     saveHistory(expression, result) {
         this.history.unshift({
             id: Date.now(),
-            expression,
+            expression: expression,
             result: result.toString(),
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
 
-        // Limit to 25 items
         if (this.history.length > 25) {
             this.history.pop();
         }
@@ -546,21 +918,16 @@ class NeoCalculator {
 
     renderHistory() {
         if (this.history.length === 0) {
-            this.historyList.innerHTML = `
-                <div class="empty-history">
-                    <p>No calculations yet</p>
-                    <small>Your past math results will appear here automatically.</small>
-                </div>
-            `;
+            this.historyList.innerHTML = '<div class="empty-history"><p>No calculations yet</p><small>Your past math results will appear here automatically.</small></div>';
             return;
         }
 
-        this.historyList.innerHTML = this.history.map(item => `
-            <div class="history-item" data-res="${item.result}" tabindex="0" title="Click to use this result">
-                <span class="history-expr">${item.expression} =</span>
-                <span class="history-res">${this.formatNumberDisplay(item.result)}</span>
-            </div>
-        `).join('');
+        this.historyList.innerHTML = this.history.map(item => 
+            '<div class="history-item" data-res="' + item.result + '" tabindex="0" title="Click to use this result">' +
+                '<span class="history-expr">' + item.expression + ' =</span>' +
+                '<span class="history-res">' + this.formatNumberDisplay(item.result) + '</span>' +
+            '</div>'
+        ).join('');
 
         this.historyList.querySelectorAll('.history-item').forEach(item => {
             item.addEventListener('click', () => {
